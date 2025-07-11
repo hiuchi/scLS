@@ -12,6 +12,7 @@
 #' @param n.bins Integer; number of frequency bins
 #' @return A ggplot object of frequency vs. power
 #' @importFrom ggplot2 ggplot aes geom_line labs theme_bw
+#' @export
 LS.plot <- function(object, time.col, feature,
                     assay = "RNA", slot = "data", center = FALSE,
                     window.func = NULL, f.min = 0, f.max = 2.0,
