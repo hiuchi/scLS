@@ -26,8 +26,8 @@
 #'     \item{p}{Gaussian-based p-value from fitted null distribution (NA if computation fails).}
 #'   }
 #'
+#' @import signal
 #' @importFrom stats dist pnorm sd
-#' @importFrom signal hanning
 #' @importFrom tibble tibble
 #' @importFrom ggplot2 ggplot aes geom_line labs theme_bw
 #' @export
