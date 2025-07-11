@@ -16,14 +16,14 @@
 
 ```bash
 # 1) Create an isolated Python 3.12 environment
-conda create -n scLSP-env python=3.12 -c conda-forge
+conda create -n scLS-env python=3.12 -c conda-forge
 
 # 2) Initialise Conda for zsh and reload the shell
 conda init zsh
 exec $SHELL        # …or simply restart your Terminal
 
 # 3) Activate the new environment
-conda activate scLSP-env
+conda activate scLS-env
 
 # 4) Install core Python dependency (Astropy)
 conda install astropy -c conda-forge
@@ -49,7 +49,7 @@ remotes::install_github("huayc09/SeuratExtend")  # SeuratExtend (Slingshot helpe
 ```
 library(reticulate)
 
-use_condaenv("scLSP-env", required = TRUE)
+use_condaenv("scLS-env", required = TRUE)
 
 # Verify that Python packages are available
 np  <- reticulate::import("numpy")
