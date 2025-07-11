@@ -20,5 +20,6 @@ Imports:
     ggplot2,
     reticulate,
     Seurat,
-    signal,
     tibble
+Depends: 
+    signal
