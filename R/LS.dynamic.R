@@ -18,6 +18,7 @@
 #' @importFrom tibble tibble
 #' @importFrom dplyr bind_rows
 #' @importFrom stats setNames
+#' @importFrom signal hanning
 #' @importFrom reticulate import py_to_r
 #' @export
 LS.dynamic <- function(object, time.col, feature = NULL, assay = "RNA", slot = "data",

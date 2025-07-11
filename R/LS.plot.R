@@ -11,6 +11,7 @@
 #' @param f.max Numeric; maximum frequency
 #' @param n.bins Integer; number of frequency bins
 #' @return A ggplot object of frequency vs. power
+#' @importFrom signal hanning
 #' @importFrom ggplot2 ggplot aes geom_line labs theme_bw
 #' @export
 LS.plot <- function(object, time.col, feature,
