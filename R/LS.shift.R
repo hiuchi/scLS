@@ -43,6 +43,7 @@ LS.shift <- function(object, time.col1, time.col2, features = NULL, assay = "RNA
   set.seed(seed)
   np <- reticulate::import("numpy")
   if (!is.null(seed) && !is.null(np$random)) np$random$seed(as.integer(seed))
+  np$seterr(divide = "ignore", invalid = "ignore")
   ats <- reticulate::import("astropy.timeseries")
 
   meta <- object@meta.data
@@ -77,11 +78,6 @@ LS.shift <- function(object, time.col1, time.col2, features = NULL, assay = "RNA
     }
     y <- sig * w
     if (center) y <- y - mean(y)
-
-    # If y is a constant signal (zero variance), add a tiny noise to avoid division by zero
-    if (stats::sd(y) == 0) {
-      y <- y + rnorm(n, mean = 0, sd = 1e-8)
-    }
 
     t1_py <- np$array(meta[valid_cells, time.col1])
     t2_py <- np$array(meta[valid_cells, time.col2])
