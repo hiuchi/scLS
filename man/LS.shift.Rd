@@ -17,8 +17,9 @@ LS.shift(
   f.max = 2,
   n.bins = 500,
   dist.method = "canberra",
-  n.perm = 1000,
-  n.cores = 1
+  n.perm = 100,
+  n.cores = 1,
+  seed = 8
 )
 }
 \arguments{
@@ -46,9 +47,11 @@ LS.shift(
 
 \item{dist.method}{Character; distance method for dist(). Default: "canberra".}
 
-\item{n.perm}{Integer; number of permutations for null distribution. Default: 1000.}
+\item{n.perm}{Integer; number of permutations for null distribution. Default: 100.}
 
 \item{n.cores}{Integer; number of cores for parallel execution. Default: 1.}
+
+\item{seed}{Integer or NULL; random seed for reproducibility of permutations. Default: 8.}
 }
 \value{
 A tibble with columns:
