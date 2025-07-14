@@ -19,6 +19,10 @@ LS.plot <- function(object, time.col, feature,
                     window.func = NULL, f.min = 0, f.max = 2.0,
                     n.bins = 500) {
   if (length(feature) != 1) stop("`feature` must be a single gene name.")
+
+  np <- reticulate::import("numpy")
+  ats <- reticulate::import("astropy.timeseries")
+
   md <- object@meta.data
   if (!(time.col %in% colnames(md))) stop(paste("Metadata column", time.col, "not found."))
   time.vec <- md[[time.col]]

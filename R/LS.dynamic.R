@@ -28,6 +28,10 @@ LS.dynamic <- function(object, time.col, feature = NULL, assay = "RNA", slot = "
   if (!requireNamespace("parallel", quietly = TRUE)) stop("Package 'parallel' is required.")
   if (!inherits(object, "Seurat")) stop("`object` must be a Seurat object.")
   if (is.null(feature)) feature <- VariableFeatures(object)
+
+  np <- reticulate::import("numpy")
+  ats <- reticulate::import("astropy.timeseries")
+
   md <- object@meta.data
   if (!(time.col %in% colnames(md))) stop(paste("Metadata column", time.col, "not found."))
   time.vec <- md[[time.col]]
