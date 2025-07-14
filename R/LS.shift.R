@@ -16,7 +16,8 @@
 #' @param f.max Numeric; maximum frequency. Default: 2.0.
 #' @param n.bins Integer; number of frequency bins. Default: 500.
 #' @param dist.method Character; distance method for dist(). Default: "canberra".
-#' @param n.perm Integer; number of permutations for null distribution. Default: 1000.
+#' @param n.perm Integer; number of permutations for null distribution. Default: 100.
+#' @param seed Integer or NULL; random seed for reproducibility of permutations. Default: 8.
 #' @param n.cores Integer; number of cores for parallel execution. Default: 1.
 #'
 #' @return A tibble with columns:
@@ -33,7 +34,7 @@
 #' @export
 LS.shift <- function(object, time.col1, time.col2, features = NULL, assay = "RNA", slot = "data",
                      center = FALSE, window.func = NULL, f.min = 0, f.max = 2.0,
-                     n.bins = 500, dist.method = "canberra", n.perm = 1000, n.cores = 1, seed = 8) {
+                     n.bins = 500, dist.method = "canberra", n.perm = 100, n.cores = 1, seed = 8) {
   if (!requireNamespace("signal", quietly = TRUE)) stop("Package 'signal' is required.")
   if (!requireNamespace("Seurat", quietly = TRUE)) stop("Package 'Seurat' is required.")
   if (!requireNamespace("reticulate", quietly = TRUE)) stop("Package 'reticulate' is required.")
@@ -76,6 +77,11 @@ LS.shift <- function(object, time.col1, time.col2, features = NULL, assay = "RNA
     }
     y <- sig * w
     if (center) y <- y - mean(y)
+
+    # If y is a constant signal (zero variance), add a tiny noise to avoid division by zero
+    if (stats::sd(y) == 0) {
+      y <- y + rnorm(n, mean = 0, sd = 1e-8)
+    }
 
     t1_py <- np$array(meta[valid_cells, time.col1])
     t2_py <- np$array(meta[valid_cells, time.col2])
