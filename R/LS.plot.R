@@ -26,7 +26,11 @@ LS.plot <- function(object, time.col, feature,
   md <- object@meta.data
   if (!(time.col %in% colnames(md))) stop(paste("Metadata column", time.col, "not found."))
   time.vec <- md[[time.col]]
-  expr.vec <- as.numeric(Seurat::GetAssayData(object, assay = assay, slot = slot)[feature, ])
+  expr.mat <- Seurat::GetAssayData(object, assay = assay, slot = slot)
+  if (!(feature %in% rownames(expr.mat))) {
+    stop(sprintf("Feature '%s' not found in assay '%s'.", feature, assay))
+  }
+  expr.vec <- as.numeric(expr.mat[feature, ])
   keep <- is.finite(time.vec) & is.finite(expr.vec)
   tvec <- time.vec[keep]; svec <- expr.vec[keep]
   ord <- order(tvec); tvec <- tvec[ord]; svec <- svec[ord]
