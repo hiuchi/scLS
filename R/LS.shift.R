@@ -40,7 +40,9 @@ LS.shift <- function(object, time.col1, time.col2, features = NULL, assay = "RNA
   if (!requireNamespace("reticulate", quietly = TRUE)) stop("Package 'reticulate' is required.")
   if (!requireNamespace("parallel", quietly = TRUE)) stop("Package 'parallel' is required for n.cores > 1.")
 
-  set.seed(seed)
+  if (!is.null(seed)) {
+    set.seed(seed)
+  }
   np <- reticulate::import("numpy")
   if (!is.null(seed) && !is.null(np$random)) np$random$seed(as.integer(seed))
   np$seterr(divide = "ignore", invalid = "ignore")
