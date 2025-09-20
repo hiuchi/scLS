@@ -45,7 +45,7 @@ LS.dynamic(
 \item{n.cores}{Integer; number of cores for parallel execution (default 1)}
 }
 \value{
-A tibble with columns Feature, PeakFrequency, and PeakFAP
+A tibble with columns Gene, PeakFrequency, and PeakFAP
 }
 \description{
 Perform Lomb–Scargle analysis with Astropy
