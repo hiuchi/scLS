@@ -38,11 +38,9 @@ curl -L -o pbmc10k_mye_small_velocyto.rds \
 ```
 if (!requireNamespace("devtools", quietly = TRUE))
     install.packages("devtools")
-if (!requireNamespace("remotes", quietly = TRUE))
-    install.packages("remotes")
 
 devtools::install_github("hiuchi/scLS")          # scLS (Lomb–Scargle utilities)
-remotes::install_github("huayc09/SeuratExtend")  # SeuratExtend (Slingshot helpers)
+devtools::install_github("huayc09/SeuratExtend")  # SeuratExtend (Slingshot helpers)
 ```
 
 #### 1.3 Bind R to the Conda environment
