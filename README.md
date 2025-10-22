@@ -1,13 +1,4 @@
-## Table of Contents
-
-1. **[Introduction & Environment Setup](#introduction--environment-setup)**  
-2. **[Dataset Acquisition & Pseudotime Computation](#dataset-acquisition--pseudotime-computation)**  
-3. **[Lomb–Scargle Analysis & Spectral Visualisation](#lombscargle-analysis--spectral-visualisation)**  
-4. **[Comparing Two Trajectories with `LS.shift`](#comparing-two-trajectories-with-lsshift)**  
-
-
-
-### 1. Introduction & Environment Setup <a name="introduction--environment-setup"></a>
+### 1. Environment Setup <a name="introduction--environment-setup"></a>
 
 > **Step 1.1 is run in the Terminal (bash/zsh).**  
 > **Steps 1.2 and 1.3 are run inside an R session.**
