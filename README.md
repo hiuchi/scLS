@@ -1,8 +1,5 @@
 ### 1. Environment Setup <a name="introduction--environment-setup"></a>
 
-> **Step 1.1 is run in the Terminal (bash/zsh).**  
-> **Steps 1.2 and 1.3 are run inside an R session.**
-
 #### 1.1 Create, activate, and populate the Conda environment *(Terminal)*
 
 ```bash
