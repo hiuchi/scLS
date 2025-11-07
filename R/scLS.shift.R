@@ -32,7 +32,7 @@
 #' @importFrom tibble tibble
 #' @importFrom ggplot2 ggplot aes geom_line labs theme_bw
 #' @export
-LS.shift <- function(object, time.col1, time.col2, features = NULL, assay = "RNA", slot = "data",
+scLS.shift <- function(object, time.col1, time.col2, features = NULL, assay = "RNA", slot = "data",
                      center = FALSE, window.func = NULL, f.min = 0, f.max = 2.0,
                      n.bins = 500, dist.method = "canberra", n.perm = 100, n.cores = 1, seed = 8) {
   if (!requireNamespace("signal", quietly = TRUE)) stop("Package 'signal' is required.")
