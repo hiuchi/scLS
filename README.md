@@ -80,11 +80,10 @@ GeneTrendHeatmap.Slingshot(
 ```
 
 ### 3. Lomb–Scargle Analysis & Spectral Visualisation <a name="lombscargle-analysis--spectral-visualisation"></a>
->All commands below run in R.
 
 ```r
 ### 3.1  Single-gene Lomb–Scargle periodogram (CD14)
-result_cd14 <- LS.dynamic(
+result_cd14 <- scLS.dynamic(
   object      = mye_small,
   time.col    = "slingPseudotime_1",
   feature     = "CD14",
@@ -97,7 +96,7 @@ result_cd14 <- LS.dynamic(
 )
 
 ### 3.2  Genome-wide scan on variable features (parallel, 4 cores)
-result_all <- LS.dynamic(
+result_all <- scLS.dynamic(
   object      = mye_small,
   time.col    = "slingPseudotime_1",
   center      = TRUE,
@@ -110,7 +109,7 @@ result_all <- LS.dynamic(
 )
 
 ### 3.3  Visualise the power spectrum for CD14
-g <- LS.plot(
+g <- scLS.plot(
   object      = mye_small,
   time.col    = "slingPseudotime_1",
   feature     = "CD14",
@@ -126,7 +125,7 @@ print(g)   # displays ggplot object
 ### 4. Comparing Two Trajectories with LS.shift <a name="comparing-two-trajectories-with-lsshift"></a>
 ```r
 ### 4.1  Distance / permutation p-value for a single gene
-shift_cd14 <- LS.shift(
+shift_cd14 <- scLS.shift(
   object      = mye_small,
   time.col1   = "slingPseudotime_1",
   time.col2   = "slingPseudotime_2",
@@ -136,7 +135,7 @@ shift_cd14 <- LS.shift(
 )
 
 # 4.2  Transcriptome-wide comparison (12 cores)
-shift_all <- LS.shift(
+shift_all <- scLS.shift(
   object      = mye_small,
   time.col1   = "slingPseudotime_1",
   time.col2   = "slingPseudotime_2",
