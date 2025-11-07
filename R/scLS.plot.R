@@ -14,7 +14,7 @@
 #' @import signal
 #' @importFrom ggplot2 ggplot aes geom_line labs theme_bw
 #' @export
-LS.plot <- function(object, time.col, feature,
+scLS.plot <- function(object, time.col, feature,
                     assay = "RNA", slot = "data", center = FALSE,
                     window.func = NULL, f.min = 0, f.max = 2.0,
                     n.bins = 500) {
