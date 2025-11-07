@@ -21,7 +21,7 @@
 #' @importFrom signal hanning
 #' @importFrom reticulate import py_to_r
 #' @export
-LS.dynamic <- function(object, time.col, feature = NULL, assay = "RNA", slot = "data",
+scLS.dynamic <- function(object, time.col, feature = NULL, assay = "RNA", slot = "data",
                        center = FALSE, window.func = NULL, f.min = 0, f.max = 2.0,
                        n.bins = 500, fap.method = "baluev", n.cores = 1) {
   if (!requireNamespace("signal", quietly = TRUE)) stop("Package 'signal' is required.")
