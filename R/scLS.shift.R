@@ -61,18 +61,18 @@ scLS.shift <- function(
     group2.object,
     time.col1,
     time.col2,
-    features   = NULL,
-    assay      = "RNA",
-    slot       = "data",
-    center     = FALSE,
+    features    = NULL,
+    assay       = "RNA",
+    slot        = "data",
+    center      = FALSE,
     window.func = NULL,
-    f.min      = 0,
-    f.max      = 2.0,
-    n.bins     = 500,
+    f.min       = 0,
+    f.max       = 2.0,
+    n.bins      = 500,
     dist.method = "canberra",
-    n.perm     = 100,
-    n.cores    = 1,
-    seed       = 8
+    n.perm      = 100,
+    n.cores     = 1,
+    seed        = 8
 ) {
   ## ---- Dependency checks ----
   if (!requireNamespace("signal", quietly = TRUE)) {
@@ -121,8 +121,8 @@ scLS.shift <- function(
 
   group1_cells <- group1_cells[group1_valid]
   group2_cells <- group2_cells[group2_valid]
-  t1_vec   <- t1_vec[group1_valid]
-  t2_vec   <- t2_vec[group2_valid]
+  t1_vec       <- t1_vec[group1_valid]
+  t2_vec       <- t2_vec[group2_valid]
 
   ## ---- Expression matrices & features ----
   group1_expr <- Seurat::GetAssayData(group1.object, assay = assay, slot = slot)
@@ -133,7 +133,7 @@ scLS.shift <- function(
   if (is.null(features)) {
     vf_group1 <- Seurat::VariableFeatures(group1.object)
     vf_group2 <- Seurat::VariableFeatures(group2.object)
-    features <- intersect(vf_group1, vf_group2)
+    features  <- intersect(vf_group1, vf_group2)
   }
   features <- intersect(features, common_genes)
 
@@ -153,6 +153,30 @@ scLS.shift <- function(
     ## Expression vectors
     sig1 <- as.numeric(group1_expr[gene, ])
     sig2 <- as.numeric(group2_expr[gene, ])
+
+    ## Variance-based handling of (quasi-)constant groups
+    eps_var  <- 1e-8   # threshold to regard a signal as (almost) constant
+    eps_jitt <- 1e-3   # noise scale added to constant signals
+
+    v1 <- stats::var(sig1, na.rm = TRUE)
+    v2 <- stats::var(sig2, na.rm = TRUE)
+
+    ## Both groups almost constant -> no dynamic information; return NA
+    if (!is.na(v1) && v1 < eps_var && !is.na(v2) && v2 < eps_var) {
+      return(tibble::tibble(
+        gene     = gene,
+        distance = NA_real_,
+        p        = NA_real_
+      ))
+    }
+
+    ## Only one group almost constant -> add small noise to stabilise LS
+    if (!is.na(v1) && v1 < eps_var) {
+      sig1 <- sig1 + stats::rnorm(length(sig1), mean = 0, sd = eps_jitt)
+    }
+    if (!is.na(v2) && v2 < eps_var) {
+      sig2 <- sig2 + stats::rnorm(length(sig2), mean = 0, sd = eps_jitt)
+    }
 
     n1 <- length(sig1)
     n2 <- length(sig2)
@@ -192,7 +216,19 @@ scLS.shift <- function(
     p1  <- reticulate::py_to_r(ls1$power(freqs_py))
     p2  <- reticulate::py_to_r(ls2$power(freqs_py))
 
+    ## Guard against non-finite powers
+    if (!all(is.finite(p1)) || !all(is.finite(p2))) {
+      return(tibble::tibble(
+        gene     = gene,
+        distance = NA_real_,
+        p        = NA_real_
+      ))
+    }
+
     obs_dist <- as.numeric(stats::dist(rbind(p1, p2), method = dist.method))
+    if (!is.finite(obs_dist)) {
+      obs_dist <- NA_real_
+    }
 
     ## Permutation null: shuffle pseudotimes within group1 and group2 separately
     perm_d <- replicate(n.perm, {
@@ -202,13 +238,16 @@ scLS.shift <- function(
       d1 <- reticulate::py_to_r(ats$LombScargle(t1p_py, y1_py)$power(freqs_py))
       d2 <- reticulate::py_to_r(ats$LombScargle(t2p_py, y2_py)$power(freqs_py))
 
+      if (!all(is.finite(d1)) || !all(is.finite(d2))) {
+        return(NA_real_)
+      }
       as.numeric(stats::dist(rbind(d1, d2), method = dist.method))
     })
 
-    mu0 <- mean(perm_d)
-    sd0 <- stats::sd(perm_d)
+    mu0 <- mean(perm_d, na.rm = TRUE)
+    sd0 <- stats::sd(perm_d, na.rm = TRUE)
 
-    if (is.na(sd0) || sd0 == 0) {
+    if (is.na(sd0) || sd0 == 0 || is.na(mu0)) {
       if (is.na(obs_dist)) {
         pval <- NA_real_
       } else {
