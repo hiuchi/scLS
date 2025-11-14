@@ -154,23 +154,13 @@ scLS.shift <- function(
     sig1 <- as.numeric(group1_expr[gene, ])
     sig2 <- as.numeric(group2_expr[gene, ])
 
-    ## Variance-based handling of (quasi-)constant groups
-    eps_var  <- 1e-8   # threshold to regard a signal as (almost) constant
-    eps_jitt <- 1e-3   # noise scale added to constant signals
+    ## (Quasi-)constant group handling: add tiny noise if needed
+    eps_var  <- 1e-12  # threshold for "almost constant"
+    eps_jitt <- 1e-3   # noise scale
 
     v1 <- stats::var(sig1, na.rm = TRUE)
     v2 <- stats::var(sig2, na.rm = TRUE)
 
-    ## Both groups almost constant -> no dynamic information; return NA
-    if (!is.na(v1) && v1 < eps_var && !is.na(v2) && v2 < eps_var) {
-      return(tibble::tibble(
-        gene     = gene,
-        distance = NA_real_,
-        p        = NA_real_
-      ))
-    }
-
-    ## Only one group almost constant -> add small noise to stabilise LS
     if (!is.na(v1) && v1 < eps_var) {
       sig1 <- sig1 + stats::rnorm(length(sig1), mean = 0, sd = eps_jitt)
     }
@@ -216,14 +206,9 @@ scLS.shift <- function(
     p1  <- reticulate::py_to_r(ls1$power(freqs_py))
     p2  <- reticulate::py_to_r(ls2$power(freqs_py))
 
-    ## Guard against non-finite powers
-    if (!all(is.finite(p1)) || !all(is.finite(p2))) {
-      return(tibble::tibble(
-        gene     = gene,
-        distance = NA_real_,
-        p        = NA_real_
-      ))
-    }
+    ## Replace non-finite powers by 0 to stabilise distance
+    p1[!is.finite(p1)] <- 0
+    p2[!is.finite(p2)] <- 0
 
     obs_dist <- as.numeric(stats::dist(rbind(p1, p2), method = dist.method))
     if (!is.finite(obs_dist)) {
@@ -238,21 +223,17 @@ scLS.shift <- function(
       d1 <- reticulate::py_to_r(ats$LombScargle(t1p_py, y1_py)$power(freqs_py))
       d2 <- reticulate::py_to_r(ats$LombScargle(t2p_py, y2_py)$power(freqs_py))
 
-      if (!all(is.finite(d1)) || !all(is.finite(d2))) {
-        return(NA_real_)
-      }
+      d1[!is.finite(d1)] <- 0
+      d2[!is.finite(d2)] <- 0
+
       as.numeric(stats::dist(rbind(d1, d2), method = dist.method))
     })
 
     mu0 <- mean(perm_d, na.rm = TRUE)
     sd0 <- stats::sd(perm_d, na.rm = TRUE)
 
-    if (is.na(sd0) || sd0 == 0 || is.na(mu0)) {
-      if (is.na(obs_dist)) {
-        pval <- NA_real_
-      } else {
-        pval <- if (obs_dist > mu0) 0 else 1
-      }
+    if (is.na(sd0) || sd0 == 0 || is.na(mu0) || is.na(obs_dist)) {
+      pval <- NA_real_
     } else {
       ## Right-sided p-value: P(D >= obs_dist)
       pval <- 1 - stats::pnorm(obs_dist, mean = mu0, sd = sd0)
