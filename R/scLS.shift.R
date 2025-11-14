@@ -1,25 +1,25 @@
 #' Perform dual Lomb–Scargle and compute distance between power spectra
-#' for separate WT and KO Seurat objects
+#' for separate group1 and group2 Seurat objects
 #'
-#' This function assumes that WT and KO cells are stored in two separate Seurat
-#' objects (wt.object and ko.object). Each object has its own pseudotime column
+#' This function assumes that group1 and group2 cells are stored in two separate Seurat
+#' objects (group1.object and group2.object). Each object has its own pseudotime column
 #' in metadata. For each feature (gene), Lomb–Scargle periodograms are computed
-#' separately for WT and KO along their respective pseudotime axes, and a
+#' separately for group1 and group2 along their respective pseudotime axes, and a
 #' distance between the two power spectra is calculated. A null distribution of
-#' distances is obtained by permuting pseudotimes within WT and KO separately,
+#' distances is obtained by permuting pseudotimes within group1 and group2 separately,
 #' and a Gaussian-based p-value is reported.
 #'
-#' @param wt.object A Seurat object for the WT group, with pseudotime in metadata
+#' @param group1.object A Seurat object for the group1 group, with pseudotime in metadata
 #'   and expression in an assay.
-#' @param ko.object A Seurat object for the KO group, with pseudotime in metadata
+#' @param group2.object A Seurat object for the group2 group, with pseudotime in metadata
 #'   and expression in an assay.
-#' @param time.col1 Character. Metadata column name in \code{wt.object} containing
-#'   pseudotime values for WT.
-#' @param time.col2 Character. Metadata column name in \code{ko.object} containing
-#'   pseudotime values for KO.
+#' @param time.col1 Character. Metadata column name in \code{group1.object} containing
+#'   pseudotime values for group1.
+#' @param time.col2 Character. Metadata column name in \code{group2.object} containing
+#'   pseudotime values for group2.
 #' @param features Optional. Vector of feature (gene) names to analyze. If NULL
-#'   (default), the intersection of \code{Seurat::VariableFeatures(wt.object)} and
-#'   \code{Seurat::VariableFeatures(ko.object)} is used, further intersected with
+#'   (default), the intersection of \code{Seurat::VariableFeatures(group1.object)} and
+#'   \code{Seurat::VariableFeatures(group2.object)} is used, further intersected with
 #'   genes present in both expression matrices.
 #' @param assay Character. Assay name to extract expression data from for both
 #'   objects. Default: "RNA".
@@ -47,7 +47,7 @@
 #'   \describe{
 #'     \item{gene}{Feature name analyzed.}
 #'     \item{distance}{Observed distance between the two power spectra
-#'       (WT vs KO).}
+#'       (group1 vs group2).}
 #'     \item{p}{Gaussian-based p-value from the fitted null distribution
 #'       (NA if computation fails).}
 #'   }
@@ -57,8 +57,8 @@
 #' @importFrom tibble tibble
 #' @export
 scLS.shift <- function(
-  wt.object,
-  ko.object,
+  group1.object,
+  group2.object,
   time.col1,
   time.col2,
   features   = NULL,
@@ -100,50 +100,50 @@ scLS.shift <- function(
   ats <- reticulate::import("astropy.timeseries")
 
   ## ---- Metadata & pseudotime ----
-  meta_wt <- wt.object@meta.data
-  meta_ko <- ko.object@meta.data
+  meta_group1 <- group1.object@meta.data
+  meta_group2 <- group2.object@meta.data
 
-  if (!time.col1 %in% colnames(meta_wt)) {
-    stop("time.col1 must exist in wt.object@meta.data.")
+  if (!time.col1 %in% colnames(meta_group1)) {
+    stop("time.col1 must exist in group1.object@meta.data.")
   }
-  if (!time.col2 %in% colnames(meta_ko)) {
-    stop("time.col2 must exist in ko.object@meta.data.")
+  if (!time.col2 %in% colnames(meta_group2)) {
+    stop("time.col2 must exist in group2.object@meta.data.")
   }
 
-  wt_cells <- colnames(wt.object)
-  ko_cells <- colnames(ko.object)
+  group1_cells <- colnames(group1.object)
+  group2_cells <- colnames(group2.object)
 
-  t1_vec <- as.numeric(meta_wt[wt_cells, time.col1])
-  t2_vec <- as.numeric(meta_ko[ko_cells, time.col2])
+  t1_vec <- as.numeric(meta_group1[group1_cells, time.col1])
+  t2_vec <- as.numeric(meta_group2[group2_cells, time.col2])
 
-  wt_valid <- !is.na(t1_vec)
-  ko_valid <- !is.na(t2_vec)
+  group1_valid <- !is.na(t1_vec)
+  group2_valid <- !is.na(t2_vec)
 
-  wt_cells <- wt_cells[wt_valid]
-  ko_cells <- ko_cells[ko_valid]
-  t1_vec   <- t1_vec[wt_valid]
-  t2_vec   <- t2_vec[ko_valid]
+  group1_cells <- group1_cells[group1_valid]
+  group2_cells <- group2_cells[group2_valid]
+  t1_vec   <- t1_vec[group1_valid]
+  t2_vec   <- t2_vec[group2_valid]
 
   ## ---- Expression matrices & features ----
-  wt_expr <- Seurat::GetAssayData(wt.object, assay = assay, slot = slot)
-  ko_expr <- Seurat::GetAssayData(ko.object, assay = assay, slot = slot)
+  group1_expr <- Seurat::GetAssayData(group1.object, assay = assay, slot = slot)
+  group2_expr <- Seurat::GetAssayData(group2.object, assay = assay, slot = slot)
 
-  common_genes <- intersect(rownames(wt_expr), rownames(ko_expr))
+  common_genes <- intersect(rownames(group1_expr), rownames(group2_expr))
 
   if (is.null(features)) {
-    vf_wt <- Seurat::VariableFeatures(wt.object)
-    vf_ko <- Seurat::VariableFeatures(ko.object)
-    features <- intersect(vf_wt, vf_ko)
+    vf_group1 <- Seurat::VariableFeatures(group1.object)
+    vf_group2 <- Seurat::VariableFeatures(group2.object)
+    features <- intersect(vf_group1, vf_group2)
   }
   features <- intersect(features, common_genes)
 
   if (length(features) < 1) {
-    stop("No common features found between wt.object and ko.object (after intersecting VariableFeatures and rownames).")
+    stop("No common features found between group1.object and group2.object (after intersecting VariableFeatures and rownames).")
   }
 
   ## Restrict expression matrices to valid cells
-  wt_expr <- wt_expr[features, wt_cells, drop = FALSE]
-  ko_expr <- ko_expr[features, ko_cells, drop = FALSE]
+  group1_expr <- group1_expr[features, group1_cells, drop = FALSE]
+  group2_expr <- group2_expr[features, group2_cells, drop = FALSE]
 
   ## Common frequency grid
   freqs_py <- np$linspace(f.min, f.max, as.integer(n.bins))
@@ -151,8 +151,8 @@ scLS.shift <- function(
   ## ---- Per-feature computation ----
   compute_feature <- function(gene) {
     ## Expression vectors
-    sig1 <- as.numeric(wt_expr[gene, ])
-    sig2 <- as.numeric(ko_expr[gene, ])
+    sig1 <- as.numeric(group1_expr[gene, ])
+    sig2 <- as.numeric(group2_expr[gene, ])
 
     n1 <- length(sig1)
     n2 <- length(sig2)
@@ -186,7 +186,7 @@ scLS.shift <- function(
     y1_py <- np$array(y1)
     y2_py <- np$array(y2)
 
-    ## Lomb–Scargle for WT and KO
+    ## Lomb–Scargle for group1 and group2
     ls1 <- ats$LombScargle(t1_py, y1_py)
     ls2 <- ats$LombScargle(t2_py, y2_py)
     p1  <- reticulate::py_to_r(ls1$power(freqs_py))
@@ -194,7 +194,7 @@ scLS.shift <- function(
 
     obs_dist <- as.numeric(stats::dist(rbind(p1, p2), method = dist.method))
 
-    ## Permutation null: shuffle pseudotimes within WT and KO separately
+    ## Permutation null: shuffle pseudotimes within group1 and group2 separately
     perm_d <- replicate(n.perm, {
       t1p_py <- np$array(sample(t1_vec))
       t2p_py <- np$array(sample(t2_vec))
