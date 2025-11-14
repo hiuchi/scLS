@@ -46,21 +46,6 @@ scLS.shift <- function(object, time.col1, time.col2, features = NULL, assay = "R
   np$seterr(divide = "ignore", invalid = "ignore")
   ats <- reticulate::import("astropy.timeseries")
 
-  meta <- object@meta.data
-  if (!(time.col1 %in% colnames(meta)) || !(time.col2 %in% colnames(meta))) {
-    stop("time.col1 and time.col2 must exist in metadata.")
-  }
-  cells_all <- colnames(object)
-  time1_all <- meta[cells_all, time.col1]
-  time2_all <- meta[cells_all, time.col2]
-  valid_cells <- cells_all[!is.na(time1_all) & !is.na(time2_all)]
-  if (length(valid_cells) < 3) stop("Not enough cells with valid pseudotimes.")
-
-  if (is.null(features)) {
-    features <- Seurat::VariableFeatures(object)
-    if (length(features) < 1) stop("No variable features found.")
-  }
-
   expr_mat <- Seurat::GetAssayData(object, assay = assay, slot = slot)
 
   compute_feature <- function(gene) {
