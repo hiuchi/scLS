@@ -124,13 +124,6 @@ scLS.shift <- function(
   t1_vec   <- t1_vec[wt_valid]
   t2_vec   <- t2_vec[ko_valid]
 
-  if (length(wt_cells) < 3) {
-    stop("Not enough cells with valid pseudotimes in WT object.")
-  }
-  if (length(ko_cells) < 3) {
-    stop("Not enough cells with valid pseudotimes in KO object.")
-  }
-
   ## ---- Expression matrices & features ----
   wt_expr <- Seurat::GetAssayData(wt.object, assay = assay, slot = slot)
   ko_expr <- Seurat::GetAssayData(ko.object, assay = assay, slot = slot)
