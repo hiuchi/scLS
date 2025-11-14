@@ -2,10 +2,12 @@
 % Please edit documentation in R/scLS.shift.R
 \name{scLS.shift}
 \alias{scLS.shift}
-\title{Perform dual Lomb–Scargle and compute distance between power spectra for Seurat objects}
+\title{Perform dual Lomb–Scargle and compute distance between power spectra
+for separate group1 and group2 Seurat objects}
 \usage{
 scLS.shift(
-  object,
+  group1.object,
+  group2.object,
   time.col1,
   time.col2,
   features = NULL,
@@ -23,21 +25,36 @@ scLS.shift(
 )
 }
 \arguments{
-\item{object}{A Seurat object with pseudotime in metadata and expression in an assay.}
+\item{group1.object}{A Seurat object for the group1 group, with pseudotime in metadata
+and expression in an assay.}
 
-\item{time.col1}{Character. Name of metadata column containing the first pseudotime values.}
+\item{group2.object}{A Seurat object for the group2 group, with pseudotime in metadata
+and expression in an assay.}
 
-\item{time.col2}{Character. Name of metadata column containing the second pseudotime values.}
+\item{time.col1}{Character. Metadata column name in \code{group1.object} containing
+pseudotime values for group1.}
 
-\item{features}{Optional. Vector of feature (gene) names to analyze. If NULL (default), all Seurat::VariableFeatures(object) are used.}
+\item{time.col2}{Character. Metadata column name in \code{group2.object} containing
+pseudotime values for group2.}
 
-\item{assay}{Character. Assay name to extract expression data from. Default: "RNA".}
+\item{features}{Optional. Vector of feature (gene) names to analyze. If NULL
+(default), the intersection of \code{Seurat::VariableFeatures(group1.object)} and
+\code{Seurat::VariableFeatures(group2.object)} is used, further intersected with
+genes present in both expression matrices.}
 
-\item{slot}{Character. Slot in assay to pull data from. Default: "data".}
+\item{assay}{Character. Assay name to extract expression data from for both
+objects. Default: "RNA".}
 
-\item{center}{Logical; if TRUE subtract the mean after windowing. Default: FALSE.}
+\item{slot}{Character. Slot in assay to pull data from for both objects.
+Default: "data".}
 
-\item{window.func}{Character or function or NULL; name of window function in 'signal' package (e.g., "hanning"), or a custom function, or NULL. Default: NULL.}
+\item{center}{Logical; if TRUE subtract the mean after windowing (for each
+group separately). Default: FALSE.}
+
+\item{window.func}{Character, function, or NULL; name of window function in
+'signal' package (e.g., "hanning"), or a custom function taking \code{n}
+and returning a length-\code{n} vector, or NULL for no windowing.
+Default: NULL.}
 
 \item{f.min}{Numeric; minimum frequency. Default: 0.}
 
@@ -45,24 +62,34 @@ scLS.shift(
 
 \item{n.bins}{Integer; number of frequency bins. Default: 500.}
 
-\item{dist.method}{Character; distance method for dist(). Default: "canberra".}
+\item{dist.method}{Character; distance method for \code{stats::dist()}.
+Default: "canberra".}
 
-\item{n.perm}{Integer; number of permutations for null distribution. Default: 100.}
+\item{n.perm}{Integer; number of permutations for null distribution
+(pseudotime permutation within each group). Default: 100.}
 
-\item{n.cores}{Integer; number of cores for parallel execution. Default: 1.}
+\item{n.cores}{Integer; number of cores for parallel execution across
+features (uses \code{parallel::mclapply}). Default: 1.}
 
-\item{seed}{Integer or NULL; random seed for reproducibility of permutations. Default: 8.}
+\item{seed}{Integer or NULL; random seed for reproducibility of permutations
+(R and NumPy). Default: 8.}
 }
 \value{
 A tibble with columns:
   \describe{
     \item{gene}{Feature name analyzed.}
-    \item{distance}{Observed distance between the two power spectra.}
-    \item{p}{Gaussian-based p-value from fitted null distribution (NA if computation fails).}
+    \item{distance}{Observed distance between the two power spectra
+      (group1 vs group2).}
+    \item{p}{Gaussian-based p-value from the fitted null distribution
+      (NA if computation fails).}
   }
 }
 \description{
-This function takes a Seurat object containing two pseudotime metadata columns and expression data
-for features (genes). It computes Lomb–Scargle periodograms along each pseudotime axis
-for each feature and returns a tibble with feature names, distances between power spectra, and Gaussian-based p-values from permutations.
+This function assumes that group1 and group2 cells are stored in two separate Seurat
+objects (group1.object and group2.object). Each object has its own pseudotime column
+in metadata. For each feature (gene), Lomb–Scargle periodograms are computed
+separately for group1 and group2 along their respective pseudotime axes, and a
+distance between the two power spectra is calculated. A null distribution of
+distances is obtained by permuting pseudotimes within group1 and group2 separately,
+and a Gaussian-based p-value is reported.
 }
