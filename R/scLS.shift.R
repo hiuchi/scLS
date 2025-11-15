@@ -66,7 +66,7 @@ scLS.shift <- function(
     slot        = "data",
     center      = FALSE,
     window.func = NULL,
-    f.min       = 0,
+    f.min       = 0.001,
     f.max       = 2.0,
     n.bins      = 500,
     dist.method = "canberra",
