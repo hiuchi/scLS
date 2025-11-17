@@ -63,11 +63,12 @@ Default: NULL.}
 
 \item{n.bins}{Integer; number of frequency bins. Default: 500.}
 
-\item{dist.method}{Character; distance method for \code{stats::dist()}.
-Default: "canberra".}
+\item{dist.method}{Character; distance method. Either a method supported by
+\code{stats::dist()} (e.g., "euclidean", "manhattan", "canberra") or the
+special value \code{"cosine"} (1 - cosine similarity). Default: "canberra".}
 
 \item{n.perm}{Integer; number of permutations for null distribution
-(pseudotime permutation within each group). Default: 100.}
+(group-label permutation across group1 and group2). Default: 100.}
 
 \item{n.cores}{Integer; number of cores for parallel execution across
 features (uses \code{parallel::mclapply}). Default: 1.}
@@ -97,6 +98,6 @@ objects (group1.object and group2.object). Each object has its own pseudotime co
 in metadata. For each feature (gene), Lomb–Scargle periodograms are computed
 separately for group1 and group2 along their respective pseudotime axes, and a
 distance between the two power spectra is calculated. A null distribution of
-distances is obtained by permuting pseudotimes within group1 and group2 separately,
+distances is obtained by permuting group labels across group1 and group2 cells,
 and a Gaussian-based p-value is reported.
 }

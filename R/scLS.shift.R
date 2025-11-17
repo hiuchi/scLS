@@ -6,7 +6,7 @@
 #' in metadata. For each feature (gene), Lomb–Scargle periodograms are computed
 #' separately for group1 and group2 along their respective pseudotime axes, and a
 #' distance between the two power spectra is calculated. A null distribution of
-#' distances is obtained by permuting pseudotimes within group1 and group2 separately,
+#' distances is obtained by permuting group labels across group1 and group2 cells,
 #' and a Gaussian-based p-value is reported.
 #'
 #' @param group1.object A Seurat object for the group1 group, with pseudotime in metadata
@@ -34,10 +34,11 @@
 #' @param f.min Numeric; minimum frequency. Default: 0.001.
 #' @param f.max Numeric; maximum frequency. Default: 2.0.
 #' @param n.bins Integer; number of frequency bins. Default: 500.
-#' @param dist.method Character; distance method for \code{stats::dist()}.
-#'   Default: "canberra".
+#' @param dist.method Character; distance method. Either a method supported by
+#'   \code{stats::dist()} (e.g., "euclidean", "manhattan", "canberra") or the
+#'   special value \code{"cosine"} (1 - cosine similarity). Default: "canberra".
 #' @param n.perm Integer; number of permutations for null distribution
-#'   (pseudotime permutation within each group). Default: 100.
+#'   (group-label permutation across group1 and group2). Default: 100.
 #' @param seed Integer or NULL; random seed for reproducibility of permutations
 #'   (R and NumPy). Default: 8.
 #' @param n.cores Integer; number of cores for parallel execution across
@@ -159,6 +160,22 @@ scLS.shift <- function(
   ## Common frequency grid
   freqs_py <- np$linspace(f.min, f.max, as.integer(n.bins))
 
+  ## ---- Distance helper (incl. cosine) ----
+  get_distance <- function(a, b) {
+    if (dist.method == "cosine") {
+      num   <- sum(a * b)
+      den   <- sqrt(sum(a^2)) * sqrt(sum(b^2))
+      if (!is.finite(num) || !is.finite(den) || den == 0) {
+        return(NA_real_)
+      }
+      d <- 1 - num / den
+      if (!is.finite(d)) d <- NA_real_
+      return(as.numeric(d))
+    } else {
+      return(as.numeric(stats::dist(rbind(a, b), method = dist.method)))
+    }
+  }
+
   ## ---- Per-feature computation ----
   compute_feature <- function(gene) {
     ## Expression vectors
@@ -205,13 +222,13 @@ scLS.shift <- function(
       y2 <- y2 - mean(y2)
     }
 
-    ## Convert to numpy arrays
+    ## Convert to numpy arrays (observed)
     t1_py <- np$array(t1_vec)
     t2_py <- np$array(t2_vec)
     y1_py <- np$array(y1)
     y2_py <- np$array(y2)
 
-    ## Lomb–Scargle for group1 and group2
+    ## Lomb–Scargle for group1 and group2 (observed)
     ls1 <- ats$LombScargle(t1_py, y1_py)
     ls2 <- ats$LombScargle(t2_py, y2_py)
     p1  <- reticulate::py_to_r(ls1$power(freqs_py, normalization = norm_py))
@@ -221,27 +238,35 @@ scLS.shift <- function(
     p1[!is.finite(p1)] <- 0
     p2[!is.finite(p2)] <- 0
 
-    obs_dist <- as.numeric(stats::dist(rbind(p1, p2), method = dist.method))
+    obs_dist <- get_distance(p1, p2)
     if (!is.finite(obs_dist)) {
       obs_dist <- NA_real_
     }
 
-    ## Permutation null: shuffle pseudotimes within group1 and group2 separately
-    perm_d <- replicate(n.perm, {
-      t1p_py <- np$array(sample(t1_vec))
-      t2p_py <- np$array(sample(t2_vec))
+    all_t <- c(t1_vec, t2_vec)
+    all_y <- c(y1,     y2)
+    N     <- n1 + n2
 
-      d1 <- reticulate::py_to_r(
-        ats$LombScargle(t1p_py, y1_py)$power(freqs_py, normalization = norm_py)
-      )
-      d2 <- reticulate::py_to_r(
-        ats$LombScargle(t2p_py, y2_py)$power(freqs_py, normalization = norm_py)
-      )
+    perm_d <- replicate(n.perm, {
+      idx  <- sample.int(N)
+      idx1 <- idx[1:n1]
+      idx2 <- idx[(n1 + 1):N]
+
+      t1p_py <- np$array(all_t[idx1])
+      t2p_py <- np$array(all_t[idx2])
+      y1p_py <- np$array(all_y[idx1])
+      y2p_py <- np$array(all_y[idx2])
+
+      ls1p <- ats$LombScargle(t1p_py, y1p_py)
+      ls2p <- ats$LombScargle(t2p_py, y2p_py)
+
+      d1 <- reticulate::py_to_r(ls1p$power(freqs_py, normalization = norm_py))
+      d2 <- reticulate::py_to_r(ls2p$power(freqs_py, normalization = norm_py))
 
       d1[!is.finite(d1)] <- 0
       d2[!is.finite(d2)] <- 0
 
-      as.numeric(stats::dist(rbind(d1, d2), method = dist.method))
+      get_distance(d1, d2)
     })
 
     mu0 <- mean(perm_d, na.rm = TRUE)
@@ -250,7 +275,7 @@ scLS.shift <- function(
     if (is.na(sd0) || sd0 == 0 || is.na(mu0) || is.na(obs_dist)) {
       pval <- NA_real_
     } else {
-      ## Right-sided p-value: P(D >= obs_dist)
+      ## Right-sided p-value: P(D >= obs_dist) under Gaussian approximation
       pval <- 1 - stats::pnorm(obs_dist, mean = mu0, sd = sd0)
     }
 
