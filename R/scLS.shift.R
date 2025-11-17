@@ -31,7 +31,7 @@
 #'   'signal' package (e.g., "hanning"), or a custom function taking \code{n}
 #'   and returning a length-\code{n} vector, or NULL for no windowing.
 #'   Default: NULL.
-#' @param f.min Numeric; minimum frequency. Default: 0.
+#' @param f.min Numeric; minimum frequency. Default: 0.001.
 #' @param f.max Numeric; maximum frequency. Default: 2.0.
 #' @param n.bins Integer; number of frequency bins. Default: 500.
 #' @param dist.method Character; distance method for \code{stats::dist()}.
@@ -42,6 +42,11 @@
 #'   (R and NumPy). Default: 8.
 #' @param n.cores Integer; number of cores for parallel execution across
 #'   features (uses \code{parallel::mclapply}). Default: 1.
+#' @param ls.normalization Character. Normalization mode passed to
+#'   \code{astropy.timeseries.LombScargle$power()}. One of
+#'   \code{"none"}, \code{"standard"}, \code{"psd"}, \code{"model"}, \code{"log"}.
+#'   If \code{"none"} (default), the Astropy side uses \code{"psd"}, which does not
+#'   divide by the variance and therefore preserves amplitude differences.
 #'
 #' @return A tibble with columns:
 #'   \describe{
@@ -61,19 +66,25 @@ scLS.shift <- function(
     group2.object,
     time.col1,
     time.col2,
-    features    = NULL,
-    assay       = "RNA",
-    slot        = "data",
-    center      = FALSE,
-    window.func = NULL,
-    f.min       = 0.001,
-    f.max       = 2.0,
-    n.bins      = 500,
-    dist.method = "canberra",
-    n.perm      = 100,
-    n.cores     = 1,
-    seed        = 8
+    features        = NULL,
+    assay           = "RNA",
+    slot            = "data",
+    center          = FALSE,
+    window.func     = NULL,
+    f.min           = 0.001,
+    f.max           = 2.0,
+    n.bins          = 500,
+    dist.method     = "canberra",
+    n.perm          = 100,
+    n.cores         = 1,
+    seed            = 8,
+    ls.normalization = c("none", "standard", "psd", "model", "log")
 ) {
+  ## ---- Normalization arg ----
+  ls.normalization <- match.arg(ls.normalization)
+  ## "none" のときは Astropy には "psd" を渡す（分散で割らない）
+  norm_py <- if (ls.normalization == "none") "psd" else ls.normalization
+
   ## ---- Dependency checks ----
   if (!requireNamespace("signal", quietly = TRUE)) {
     stop("Package 'signal' is required.")
@@ -203,8 +214,8 @@ scLS.shift <- function(
     ## Lomb–Scargle for group1 and group2
     ls1 <- ats$LombScargle(t1_py, y1_py)
     ls2 <- ats$LombScargle(t2_py, y2_py)
-    p1  <- reticulate::py_to_r(ls1$power(freqs_py))
-    p2  <- reticulate::py_to_r(ls2$power(freqs_py))
+    p1  <- reticulate::py_to_r(ls1$power(freqs_py, normalization = norm_py))
+    p2  <- reticulate::py_to_r(ls2$power(freqs_py, normalization = norm_py))
 
     ## Replace non-finite powers by 0 to stabilise distance
     p1[!is.finite(p1)] <- 0
@@ -220,8 +231,12 @@ scLS.shift <- function(
       t1p_py <- np$array(sample(t1_vec))
       t2p_py <- np$array(sample(t2_vec))
 
-      d1 <- reticulate::py_to_r(ats$LombScargle(t1p_py, y1_py)$power(freqs_py))
-      d2 <- reticulate::py_to_r(ats$LombScargle(t2p_py, y2_py)$power(freqs_py))
+      d1 <- reticulate::py_to_r(
+        ats$LombScargle(t1p_py, y1_py)$power(freqs_py, normalization = norm_py)
+      )
+      d2 <- reticulate::py_to_r(
+        ats$LombScargle(t2p_py, y2_py)$power(freqs_py, normalization = norm_py)
+      )
 
       d1[!is.finite(d1)] <- 0
       d2[!is.finite(d2)] <- 0
