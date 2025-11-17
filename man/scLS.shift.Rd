@@ -18,7 +18,8 @@ scLS.shift(
   f.min = 0.001,
   f.max = 2,
   n.bins = 500,
-  dist.method = "canberra",
+  dist.method = c("euclidean", "canberra", "manhattan", "maximum", "minkowski", "binary",
+    "cosine"),
   n.perm = 100,
   n.cores = 1,
   seed = 8,
@@ -38,43 +39,46 @@ pseudotime values for group1.}
 \item{time.col2}{Character. Metadata column name in \code{group2.object} containing
 pseudotime values for group2.}
 
-\item{features}{Optional. Vector of feature (gene) names to analyze. If NULL
+\item{features}{Optional. Vector of feature (gene) names to analyze. If \code{NULL}
 (default), the intersection of \code{Seurat::VariableFeatures(group1.object)} and
 \code{Seurat::VariableFeatures(group2.object)} is used, further intersected with
 genes present in both expression matrices.}
 
 \item{assay}{Character. Assay name to extract expression data from for both
-objects. Default: "RNA".}
+objects. Default: \code{"RNA"}.}
 
 \item{slot}{Character. Slot in assay to pull data from for both objects.
-Default: "data".}
+Default: \code{"data"}.}
 
-\item{center}{Logical; if TRUE subtract the mean after windowing (for each
-group separately). Default: FALSE.}
+\item{center}{Logical; if \code{TRUE} subtract the mean after windowing (for each
+group separately). Default: \code{FALSE}.}
 
-\item{window.func}{Character, function, or NULL; name of window function in
-'signal' package (e.g., "hanning"), or a custom function taking \code{n}
-and returning a length-\code{n} vector, or NULL for no windowing.
-Default: NULL.}
+\item{window.func}{Character, function, or \code{NULL}; name of window function in
+the \pkg{signal} package (e.g., \code{"hanning"}), or a custom function taking \code{n}
+and returning a length-\code{n} vector, or \code{NULL} for no windowing.
+Default: \code{NULL}.}
 
-\item{f.min}{Numeric; minimum frequency. Default: 0.001.}
+\item{f.min}{Numeric; minimum frequency. Default: \code{0.001}.}
 
-\item{f.max}{Numeric; maximum frequency. Default: 2.0.}
+\item{f.max}{Numeric; maximum frequency. Default: \code{2.0}.}
 
-\item{n.bins}{Integer; number of frequency bins. Default: 500.}
+\item{n.bins}{Integer; number of frequency bins. Default: \code{500}.}
 
-\item{dist.method}{Character; distance method. Either a method supported by
-\code{stats::dist()} (e.g., "euclidean", "manhattan", "canberra") or the
-special value \code{"cosine"} (1 - cosine similarity). Default: "canberra".}
+\item{dist.method}{Character; distance method. One of
+\code{"canberra"}, \code{"euclidean"}, \code{"manhattan"},
+\code{"maximum"}, \code{"minkowski"}, \code{"binary"}, \code{"cosine"}.
+Values other than \code{"cosine"} are passed to \code{stats::dist()}.
+The special value \code{"cosine"} computes \eqn{1 -} cosine similarity.
+Default: \code{"canberra"}.}
 
-\item{n.perm}{Integer; number of permutations for null distribution
-(group-label permutation across group1 and group2). Default: 100.}
+\item{n.perm}{Integer; number of permutations for the null distribution
+(group-label permutation across group1 and group2). Default: \code{100}.}
 
 \item{n.cores}{Integer; number of cores for parallel execution across
-features (uses \code{parallel::mclapply}). Default: 1.}
+features (uses \code{parallel::mclapply}). Default: \code{1}.}
 
-\item{seed}{Integer or NULL; random seed for reproducibility of permutations
-(R and NumPy). Default: 8.}
+\item{seed}{Integer or \code{NULL}; random seed for reproducibility of permutations
+(both R and NumPy). Default: \code{8}.}
 
 \item{ls.normalization}{Character. Normalization mode passed to
 \code{astropy.timeseries.LombScargle$power()}. One of
