@@ -21,7 +21,8 @@ scLS.shift(
   dist.method = "canberra",
   n.perm = 100,
   n.cores = 1,
-  seed = 8
+  seed = 8,
+  ls.normalization = c("none", "standard", "psd", "model", "log")
 )
 }
 \arguments{
@@ -56,7 +57,7 @@ group separately). Default: FALSE.}
 and returning a length-\code{n} vector, or NULL for no windowing.
 Default: NULL.}
 
-\item{f.min}{Numeric; minimum frequency. Default: 0.}
+\item{f.min}{Numeric; minimum frequency. Default: 0.001.}
 
 \item{f.max}{Numeric; maximum frequency. Default: 2.0.}
 
@@ -73,6 +74,12 @@ features (uses \code{parallel::mclapply}). Default: 1.}
 
 \item{seed}{Integer or NULL; random seed for reproducibility of permutations
 (R and NumPy). Default: 8.}
+
+\item{ls.normalization}{Character. Normalization mode passed to
+\code{astropy.timeseries.LombScargle$power()}. One of
+\code{"none"}, \code{"standard"}, \code{"psd"}, \code{"model"}, \code{"log"}.
+If \code{"none"} (default), the Astropy side uses \code{"psd"}, which does not
+divide by the variance and therefore preserves amplitude differences.}
 }
 \value{
 A tibble with columns:
