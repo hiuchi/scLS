@@ -17,32 +17,35 @@
 #'   pseudotime values for group1.
 #' @param time.col2 Character. Metadata column name in \code{group2.object} containing
 #'   pseudotime values for group2.
-#' @param features Optional. Vector of feature (gene) names to analyze. If NULL
+#' @param features Optional. Vector of feature (gene) names to analyze. If \code{NULL}
 #'   (default), the intersection of \code{Seurat::VariableFeatures(group1.object)} and
 #'   \code{Seurat::VariableFeatures(group2.object)} is used, further intersected with
 #'   genes present in both expression matrices.
 #' @param assay Character. Assay name to extract expression data from for both
-#'   objects. Default: "RNA".
+#'   objects. Default: \code{"RNA"}.
 #' @param slot Character. Slot in assay to pull data from for both objects.
-#'   Default: "data".
-#' @param center Logical; if TRUE subtract the mean after windowing (for each
-#'   group separately). Default: FALSE.
-#' @param window.func Character, function, or NULL; name of window function in
-#'   'signal' package (e.g., "hanning"), or a custom function taking \code{n}
-#'   and returning a length-\code{n} vector, or NULL for no windowing.
-#'   Default: NULL.
-#' @param f.min Numeric; minimum frequency. Default: 0.001.
-#' @param f.max Numeric; maximum frequency. Default: 2.0.
-#' @param n.bins Integer; number of frequency bins. Default: 500.
-#' @param dist.method Character; distance method. Either a method supported by
-#'   \code{stats::dist()} (e.g., "euclidean", "manhattan", "canberra") or the
-#'   special value \code{"cosine"} (1 - cosine similarity). Default: "canberra".
-#' @param n.perm Integer; number of permutations for null distribution
-#'   (group-label permutation across group1 and group2). Default: 100.
-#' @param seed Integer or NULL; random seed for reproducibility of permutations
-#'   (R and NumPy). Default: 8.
+#'   Default: \code{"data"}.
+#' @param center Logical; if \code{TRUE} subtract the mean after windowing (for each
+#'   group separately). Default: \code{FALSE}.
+#' @param window.func Character, function, or \code{NULL}; name of window function in
+#'   the \pkg{signal} package (e.g., \code{"hanning"}), or a custom function taking \code{n}
+#'   and returning a length-\code{n} vector, or \code{NULL} for no windowing.
+#'   Default: \code{NULL}.
+#' @param f.min Numeric; minimum frequency. Default: \code{0.001}.
+#' @param f.max Numeric; maximum frequency. Default: \code{2.0}.
+#' @param n.bins Integer; number of frequency bins. Default: \code{500}.
+#' @param dist.method Character; distance method. One of
+#'   \code{"canberra"}, \code{"euclidean"}, \code{"manhattan"},
+#'   \code{"maximum"}, \code{"minkowski"}, \code{"binary"}, \code{"cosine"}.
+#'   Values other than \code{"cosine"} are passed to \code{stats::dist()}.
+#'   The special value \code{"cosine"} computes \eqn{1 -} cosine similarity.
+#'   Default: \code{"canberra"}.
+#' @param n.perm Integer; number of permutations for the null distribution
+#'   (group-label permutation across group1 and group2). Default: \code{100}.
 #' @param n.cores Integer; number of cores for parallel execution across
-#'   features (uses \code{parallel::mclapply}). Default: 1.
+#'   features (uses \code{parallel::mclapply}). Default: \code{1}.
+#' @param seed Integer or \code{NULL}; random seed for reproducibility of permutations
+#'   (both R and NumPy). Default: \code{8}.
 #' @param ls.normalization Character. Normalization mode passed to
 #'   \code{astropy.timeseries.LombScargle$power()}. One of
 #'   \code{"none"}, \code{"standard"}, \code{"psd"}, \code{"model"}, \code{"log"}.
@@ -59,30 +62,33 @@
 #'   }
 #'
 #' @import signal
-#' @importFrom stats dist pnorm sd
-#' @importFrom tibble tibble
+#' @importFrom stats dist pnorm sd var rnorm
+#' @importFrom tibble tibble as_tibble
 #' @export
 scLS.shift <- function(
     group1.object,
     group2.object,
     time.col1,
     time.col2,
-    features        = NULL,
-    assay           = "RNA",
-    slot            = "data",
-    center          = FALSE,
-    window.func     = NULL,
-    f.min           = 0.001,
-    f.max           = 2.0,
-    n.bins          = 500,
-    dist.method     = "canberra",
-    n.perm          = 100,
-    n.cores         = 1,
-    seed            = 8,
+    features         = NULL,
+    assay            = "RNA",
+    slot             = "data",
+    center           = FALSE,
+    window.func      = NULL,
+    f.min            = 0.001,
+    f.max            = 2.0,
+    n.bins           = 500,
+    dist.method      = c("euclidean", "canberra", "manhattan",
+                         "maximum", "minkowski", "binary", "cosine"),
+    n.perm           = 100,
+    n.cores          = 1,
+    seed             = 8,
     ls.normalization = c("none", "standard", "psd", "model", "log")
 ) {
-  ## ---- Normalization arg ----
+  ## ---- Argument normalization ----
   ls.normalization <- match.arg(ls.normalization)
+  dist.method      <- match.arg(dist.method)
+
   ## "none" のときは Astropy には "psd" を渡す（分散で割らない）
   norm_py <- if (ls.normalization == "none") "psd" else ls.normalization
 
@@ -163,8 +169,8 @@ scLS.shift <- function(
   ## ---- Distance helper (incl. cosine) ----
   get_distance <- function(a, b) {
     if (dist.method == "cosine") {
-      num   <- sum(a * b)
-      den   <- sqrt(sum(a^2)) * sqrt(sum(b^2))
+      num <- sum(a * b)
+      den <- sqrt(sum(a^2)) * sqrt(sum(b^2))
       if (!is.finite(num) || !is.finite(den) || den == 0) {
         return(NA_real_)
       }
@@ -243,6 +249,7 @@ scLS.shift <- function(
       obs_dist <- NA_real_
     }
 
+    ## Pool pseudotime and signal for permutation
     all_t <- c(t1_vec, t2_vec)
     all_y <- c(y1,     y2)
     N     <- n1 + n2
@@ -295,5 +302,5 @@ scLS.shift <- function(
     results <- lapply(features, compute_feature)
   }
 
-  do.call(rbind, results)
+  tibble::as_tibble(do.call(rbind, results))
 }
