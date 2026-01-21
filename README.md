@@ -1,7 +1,8 @@
 ### 1. Environment Setup <a name="introduction--environment-setup"></a>
 
-#### 1.1 Create, activate, and populate the Conda environment *(Terminal)*
+#### 1.1 Create, activate, and populate the Conda environment (Terminal)
 
+Run the following commands in your terminal.
 ```bash
 # 1) Create an isolated Python 3.12 environment
 conda create -n scLS-env python=3.12 -c conda-forge
@@ -23,6 +24,7 @@ curl -L -o pbmc10k_mye_small_velocyto.rds \
 ```
 
 #### 1.2 Install the required R packages
+From this point onward, all commands are executed in R.
 ```
 if (!requireNamespace("devtools", quietly = TRUE))
     install.packages("devtools")
