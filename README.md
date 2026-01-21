@@ -46,8 +46,6 @@ ats <- reticulate::import("astropy.timeseries")
 
 ### 2. Dataset Acquisition & Pseudotime Computation <a name="dataset-acquisition--pseudotime-computation"></a>
 
-> **All commands below run in _R_.**
-
 ```r
 # Load libraries
 library(Seurat)
