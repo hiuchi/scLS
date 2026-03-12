@@ -255,15 +255,3 @@ Typical substitutions are:
 If you already computed pseudotime with another method, you can still use
 `scLS.dynamic()` and `scLS.shift()` as long as the pseudotime values are numeric
 and stored in metadata.
-
-## 6. Minimal working summary
-
-If you want the shortest possible path:
-
-1. Install `scLS`, `SeuratExtend`, and Astropy.
-2. Load a Seurat object and add a numeric pseudotime column.
-3. Run `scLS.dynamic()` on one pseudotime axis.
-4. Split cells into two trajectory-specific Seurat objects.
-5. Run `scLS.shift()` to compare the two trajectories.
-
-That is the core `scLS` workflow.
