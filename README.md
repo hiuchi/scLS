@@ -234,24 +234,3 @@ shift_panel %>%
 Genes with larger `distance` and smaller `p` are stronger candidates for
 trajectory-specific dynamics. For a larger production run, remove the
 `features = shift_features` line and increase `n.perm`.
-
-## 5. How to adapt this to your own data
-
-To use `scLS` on another dataset, you need:
-
-1. A Seurat object with expression values in the assay you want to analyze.
-2. One or more numeric pseudotime columns stored in `object@meta.data`.
-3. For `scLS.shift()`, two Seurat objects representing the two trajectories you
-   want to compare.
-
-Typical substitutions are:
-
-- replace `mye_small` with your own Seurat object
-- replace `slingPseudotime_1` and `slingPseudotime_2` with your own pseudotime
-  column names
-- replace `"CD14"` with genes of interest
-- adjust `f.min`, `f.max`, `n.bins`, and `n.cores` to suit your dataset
-
-If you already computed pseudotime with another method, you can still use
-`scLS.dynamic()` and `scLS.shift()` as long as the pseudotime values are numeric
-and stored in metadata.
