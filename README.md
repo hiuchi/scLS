@@ -9,7 +9,7 @@ pseudotime with Slingshot, run `scLS.dynamic()` on one trajectory, and run
 The workflow below uses an example PBMC dataset so you can run the full analysis
 end to end before switching to your own data.
 
-## Main functions
+## Functions
 
 - `scLS.dynamic()`: analyze one pseudotime axis and find genes with periodic or
   oscillatory structure along that trajectory.
