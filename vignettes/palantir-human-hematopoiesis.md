@@ -201,12 +201,33 @@ ranked_result %>%
   head(20)
 ```
 
-In the local run, the top 20 ranked genes were `S100A4`, `ATPIF1`, `NAA38`,
-`TMEM14C`, `MYL6`, `TPI1`, `SERBP1`, `HNRNPA2B1`, `NDUFS5`, `CHCHD2`, `MT-ND1`,
-`MT-CO3`, `TCEB2`, `PRDX2`, `UQCRQ`, `PRSS57`, `BLVRB`, `ATP5J2`, `NOP10`, and
-`TMEM14B`. The first 12 genes had `PeakFAP` values reported as 0 because of
-floating-point underflow, and ranks 13--20 had `PeakFAP` values from
-`3.38e-312` to `9.66e-293`.
+Example output from the local run:
+
+```text
+# A tibble: 20 x 4
+   Feature   PeakFrequency   PeakFAP   q_value
+   <chr>             <dbl>     <dbl>     <dbl>
+ 1 S100A4             1.40 0         0
+ 2 ATPIF1             1.34 0         0
+ 3 NAA38              1.40 0         0
+ 4 TMEM14C            1.43 0         0
+ 5 MYL6               1.41 0         0
+ 6 TPI1               1.41 0         0
+ 7 SERBP1             1.41 0         0
+ 8 HNRNPA2B1          1.42 0         0
+ 9 NDUFS5             1.39 0         0
+10 CHCHD2             1.40 0         0
+11 MT-ND1             1.41 0         0
+12 MT-CO3             1.41 0         0
+13 TCEB2              1.37 3.38e-312 4.86e-310
+14 PRDX2              1.29 6.18e-311 8.24e-309
+15 UQCRQ              1.37 2.71e-309 3.38e-307
+16 PRSS57             1.43 5.78e-308 6.75e-306
+17 BLVRB              1.37 8.04e-303 8.83e-301
+18 ATP5J2             1.37 3.81e-296 3.95e-294
+19 NOP10              1.36 1.77e-295 1.74e-293
+20 TMEM14B            1.42 9.66e-293 9.01e-291
+```
 
 In a local run using Replicate 1 with an erythroid branch-probability threshold
 of 0.5, erythroid-associated genes such as `BLVRB`, `KLF1`, `GATA1`, `AHSP`,
