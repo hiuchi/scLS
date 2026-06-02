@@ -273,12 +273,3 @@ For branching datasets such as hematopoiesis, avoid interpreting a single global
 run across all branches as branch-specific evidence. When the question is
 lineage-specific, first select a lineage or trajectory segment, then run
 `scLS.dynamic()` on that subset.
-
-## 7. Why this example is useful
-
-Human hematopoietic differentiation is a well-studied system. That makes it a
-good practical check for the end-user utility of `scLS.dynamic()` p-values:
-instead of asking whether the method produces a different numerical ranking from
-another tool, this workflow asks whether the ranking helps users recover and
-inspect biologically meaningful trajectory-associated genes in a familiar
-differentiation system.
