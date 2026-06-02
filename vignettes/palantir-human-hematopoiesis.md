@@ -143,8 +143,8 @@ pseudotime ordering.
 ## 4. Run scLS.dynamic()
 
 Start with a small marker panel to confirm the interpretation. Known erythroid
-genes such as `GATA1`, `KLF1`, `GYPA`, `HBA1`, `HBA2`, `HBB`, and `ALAS2` are
-useful positive controls for this lineage.
+genes such as `GATA1`, `KLF1`, `TAL1`, `HBA1`, `HBA2`, `HBB`, `GYPA`, and
+`ALAS2` are useful genes to inspect for this lineage.
 
 ```r
 erythroid_markers <- c("GATA1", "KLF1", "TAL1", "GYPA", "HBA1", "HBA2", "HBB", "ALAS2")
@@ -195,6 +195,12 @@ ranked_result %>%
   head(20)
 ```
 
+In a local run using Replicate 1 with an erythroid branch-probability threshold
+of 0.5, the top-ranked genes included erythroid-associated genes such as `BLVRB`,
+`KLF1`, `GATA1`, `AHSP`, `ANK1`, `TFR2`, `HBB`, and `HBA1`. This is the intended
+use of the p-value ranking: it prioritizes genes for marker comparison and
+trajectory-level visualization.
+
 ## 5. Plot representative genes along pseudotime
 
 The next step is visual inspection. A low `PeakFAP` value should lead to a
@@ -215,7 +221,10 @@ plot_gene_trend <- function(object, gene) {
     theme_bw()
 }
 
-genes_to_plot <- intersect(c("GATA1", "KLF1", "GYPA", "HBB", "ALAS2"), rownames(erythroid_obj))
+genes_to_plot <- intersect(
+  c("GATA1", "KLF1", "AHSP", "HBB", "BLVRB", "ANK1", "TFR2"),
+  rownames(erythroid_obj)
+)
 trend_plots <- lapply(genes_to_plot, plot_gene_trend, object = erythroid_obj)
 
 wrap_plots(trend_plots)
@@ -223,12 +232,11 @@ wrap_plots(trend_plots)
 
 For this dataset, top-ranked genes should be interpreted by checking whether
 they recover known hematopoietic differentiation markers or transcriptional
-programs. In an erythroid branch, expected examples include erythroid regulators
-and markers such as `GATA1`, `KLF1`, `GYPA`, hemoglobin genes, and heme
-biosynthesis genes. For a myeloid branch, a similar workflow can be applied after
-selecting the corresponding branch-probability column, where genes such as
-`MPO`, `ELANE`, `LYZ`, `SPI1`, `S100A8`, and `S100A9` may be useful markers to
-inspect.
+programs. In an erythroid branch, useful genes to inspect include erythroid
+regulators and markers such as `GATA1`, `KLF1`, `AHSP`, `ANK1`, `HBB`, and
+`HBA1`. For a myeloid branch, a similar workflow can be applied after selecting
+the corresponding branch-probability column, where genes such as `MPO`, `ELANE`,
+`LYZ`, `SPI1`, `S100A8`, and `S100A9` may be useful markers to inspect.
 
 ## 6. Practical interpretation
 
