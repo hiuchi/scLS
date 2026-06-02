@@ -1,18 +1,28 @@
 # scLS
 
 `scLS` applies Lomb-Scargle analysis to single-cell trajectories stored in Seurat
-objects. This README is written as a short vignette: it shows how to install the
-package, connect R to a Python environment that provides Astropy, compute
-pseudotime with Slingshot, run `scLS.dynamic()` on one trajectory, and run
-`scLS.shift()` to compare two trajectories.
+objects. The p-values returned by `scLS.dynamic()` are intended as a screening
+metric for ranking genes with pseudotime-associated expression dynamics. They
+help prioritize genes for visualization, marker comparison, and downstream
+biological interpretation rather than serving as a final biological conclusion by
+themselves.
+
+This README is written as a short vignette: it shows how to install the package,
+connect R to a Python environment that provides Astropy, compute pseudotime with
+Slingshot, run `scLS.dynamic()` on one trajectory, and run `scLS.shift()` to
+compare two trajectories.
 
 The workflow below uses an example PBMC dataset so you can run the full analysis
 end to end before switching to your own data.
 
+For a biologically annotated example using the Setty et al. / Palantir human
+CD34+ bone marrow hematopoiesis dataset, see
+[Interpreting scLS p-values in human hematopoiesis](vignettes/palantir-human-hematopoiesis.md).
+
 ## Functions
 
-- `scLS.dynamic()`: analyze one pseudotime axis and find genes with periodic or
-  oscillatory structure along that trajectory.
+- `scLS.dynamic()`: analyze one pseudotime axis and rank genes with dynamic,
+  transient, or non-monotonic expression structure along that trajectory.
 - `scLS.shift()`: compare two trajectories and quantify how different each gene's
   Lomb-Scargle spectrum is between them.
 

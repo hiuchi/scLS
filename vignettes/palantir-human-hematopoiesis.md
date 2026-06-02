@@ -1,0 +1,258 @@
+# Interpreting scLS p-values in human hematopoiesis
+
+This page shows how to use `scLS.dynamic()` as a practical gene-ranking step in
+a well-characterized single-cell differentiation system. The example uses the
+human CD34+ bone marrow hematopoiesis dataset from Setty et al. / Palantir.
+
+The goal is not to claim a new hematopoietic discovery. The goal is to show how
+an end user can use the `scLS.dynamic()` p-value to prioritize genes whose
+expression changes along pseudotime, then inspect whether top-ranked genes
+include known lineage markers or differentiation-associated programs.
+
+In this workflow, the `PeakFAP` column returned by `scLS.dynamic()` is treated as
+a gene-level p-value-like screening statistic. Smaller values indicate stronger
+Lomb-Scargle power along the supplied pseudotime axis. These values should be
+used to prioritize genes for follow-up visualization and biological annotation;
+they are not a replacement for marker validation, lineage-aware analysis, or
+replicate-aware modeling.
+
+## Dataset
+
+Setty et al. applied Palantir to human CD34+ bone marrow cells and provide
+processed `scanpy` AnnData objects for three biological replicates:
+
+- [Replicate 1](https://s3.amazonaws.com/dp-lab-data-public/palantir/human_cd34_bm_rep1.h5ad)
+- [Replicate 2](https://s3.amazonaws.com/dp-lab-data-public/palantir/human_cd34_bm_rep2.h5ad)
+- [Replicate 3](https://s3.amazonaws.com/dp-lab-data-public/palantir/human_cd34_bm_rep3.h5ad)
+
+The objects include log-normalized expression values, Palantir pseudotime,
+branch probabilities, and low-dimensional coordinates. The example below uses
+Replicate 1 for a compact, reproducible demonstration.
+
+Relevant references:
+
+- Palantir GitHub repository: <https://github.com/dpeerlab/Palantir>
+- Palantir manuscript: <https://doi.org/10.1038/s41587-019-0068-4>
+
+## 1. Install dependencies
+
+Install the R packages used in this example:
+
+```r
+install.packages(c("anndata", "curl", "dplyr", "ggplot2", "patchwork", "remotes"))
+remotes::install_github("hiuchi/scLS")
+```
+
+`scLS` uses Python's Astropy through `reticulate`. Create and bind a Python
+environment that contains Astropy before running `scLS.dynamic()`:
+
+```bash
+conda create -n scLS-env python=3.12 astropy -c conda-forge
+conda activate scLS-env
+```
+
+```r
+library(reticulate)
+use_condaenv("scLS-env", required = TRUE)
+```
+
+## 2. Load the Palantir AnnData object
+
+This code downloads Replicate 1 to an absolute temporary path and converts it to
+a Seurat object. The expression matrix stored in `.X` is the filtered,
+normalized, and log-transformed matrix distributed by Palantir.
+
+```r
+library(anndata)
+library(curl)
+library(Seurat)
+library(dplyr)
+library(ggplot2)
+library(patchwork)
+library(scLS)
+
+rep1_url <- "https://s3.amazonaws.com/dp-lab-data-public/palantir/human_cd34_bm_rep1.h5ad"
+rep1_file <- file.path(tempdir(), "human_cd34_bm_rep1.h5ad")
+
+curl_download(rep1_url, rep1_file)
+adata <- read_h5ad(rep1_file)
+
+human_cd34 <- CreateSeuratObject(
+  counts = t(adata$X),
+  meta.data = adata$obs,
+  project = "Setty_CD34_BM_Rep1"
+)
+```
+
+Add Palantir t-SNE coordinates and branch probabilities to the Seurat object:
+
+```r
+tsne <- adata$obsm[["tsne"]]
+rownames(tsne) <- rownames(adata$obs)
+colnames(tsne) <- c("tSNE_1", "tSNE_2")
+
+human_cd34[["tsne"]] <- CreateDimReducObject(
+  embeddings = tsne,
+  key = "tSNE_"
+)
+
+branch_probs <- as.data.frame(adata$obsm[["palantir_branch_probs"]])
+colnames(branch_probs) <- make.names(adata$uns[["palantir_branch_probs_cell_types"]])
+rownames(branch_probs) <- rownames(adata$obs)
+
+human_cd34 <- AddMetaData(human_cd34, metadata = branch_probs)
+```
+
+Select variable genes for the transcriptome-wide `scLS.dynamic()` scan. Because
+the Palantir object already stores normalized expression in `.X`, the example
+uses the `counts` slot directly.
+
+```r
+expr_mat <- GetAssayData(human_cd34, assay = "RNA", slot = "counts")
+gene_means <- Matrix::rowMeans(expr_mat)
+gene_vars <- Matrix::rowMeans(expr_mat ^ 2) - gene_means ^ 2
+
+VariableFeatures(human_cd34) <- names(sort(gene_vars, decreasing = TRUE))[1:2000]
+```
+
+## 3. Select one lineage for a clear dynamic-expression example
+
+`scLS.dynamic()` tests for expression structure along one supplied pseudotime
+axis. For a branching differentiation system, apply it to a biologically
+interpretable lineage or trajectory segment when the goal is lineage-specific
+interpretation.
+
+Here we use the branch-probability column corresponding to the erythroid branch.
+The exact column name is taken from the Palantir metadata.
+
+```r
+erythroid_col <- colnames(branch_probs)[grepl("ery", colnames(branch_probs), ignore.case = TRUE)][1]
+erythroid_cells <- colnames(human_cd34)[human_cd34[[erythroid_col]][, 1] > 0.5]
+
+erythroid_obj <- subset(human_cd34, cells = erythroid_cells)
+
+pt <- erythroid_obj$palantir_pseudotime
+erythroid_obj$pseudotime_scLS <- (pt - min(pt, na.rm = TRUE)) /
+  (max(pt, na.rm = TRUE) - min(pt, na.rm = TRUE))
+```
+
+This branch-restricted analysis keeps the interpretation simple: genes with
+small `PeakFAP` values are genes whose expression varies along the erythroid
+pseudotime ordering.
+
+## 4. Run scLS.dynamic()
+
+Start with a small marker panel to confirm the interpretation. Known erythroid
+genes such as `GATA1`, `KLF1`, `GYPA`, `HBA1`, `HBA2`, `HBB`, and `ALAS2` are
+useful positive controls for this lineage.
+
+```r
+erythroid_markers <- c("GATA1", "KLF1", "TAL1", "GYPA", "HBA1", "HBA2", "HBB", "ALAS2")
+erythroid_markers <- intersect(erythroid_markers, rownames(erythroid_obj))
+
+marker_result <- scLS.dynamic(
+  object = erythroid_obj,
+  time.col = "pseudotime_scLS",
+  feature = erythroid_markers,
+  assay = "RNA",
+  slot = "counts",
+  center = TRUE,
+  window.func = "hanning",
+  f.min = 0.01,
+  f.max = 2,
+  n.bins = 500,
+  fap.method = "baluev"
+)
+
+marker_result %>%
+  mutate(q_value = p.adjust(PeakFAP, method = "BH")) %>%
+  arrange(PeakFAP)
+```
+
+Then scan the variable genes and rank genes by `PeakFAP`:
+
+```r
+all_result <- scLS.dynamic(
+  object = erythroid_obj,
+  time.col = "pseudotime_scLS",
+  assay = "RNA",
+  slot = "counts",
+  center = TRUE,
+  window.func = "hanning",
+  f.min = 0.01,
+  f.max = 2,
+  n.bins = 500,
+  fap.method = "baluev",
+  n.cores = 4
+)
+
+ranked_result <- all_result %>%
+  mutate(q_value = p.adjust(PeakFAP, method = "BH")) %>%
+  arrange(PeakFAP)
+
+ranked_result %>%
+  select(Feature, PeakFrequency, PeakFAP, q_value) %>%
+  head(20)
+```
+
+## 5. Plot representative genes along pseudotime
+
+The next step is visual inspection. A low `PeakFAP` value should lead to a
+clear, interpretable expression pattern along pseudotime.
+
+```r
+plot_gene_trend <- function(object, gene) {
+  expr <- as.numeric(GetAssayData(object, assay = "RNA", slot = "counts")[gene, ])
+
+  data.frame(
+    pseudotime = object$pseudotime_scLS,
+    expression = expr
+  ) %>%
+    ggplot(aes(x = pseudotime, y = expression)) +
+    geom_point(size = 0.4, alpha = 0.35) +
+    geom_smooth(method = "loess", formula = y ~ x, se = FALSE, linewidth = 0.8) +
+    labs(title = gene, x = "Palantir pseudotime", y = "Expression") +
+    theme_bw()
+}
+
+genes_to_plot <- intersect(c("GATA1", "KLF1", "GYPA", "HBB", "ALAS2"), rownames(erythroid_obj))
+trend_plots <- lapply(genes_to_plot, plot_gene_trend, object = erythroid_obj)
+
+wrap_plots(trend_plots)
+```
+
+For this dataset, top-ranked genes should be interpreted by checking whether
+they recover known hematopoietic differentiation markers or transcriptional
+programs. In an erythroid branch, expected examples include erythroid regulators
+and markers such as `GATA1`, `KLF1`, `GYPA`, hemoglobin genes, and heme
+biosynthesis genes. For a myeloid branch, a similar workflow can be applied after
+selecting the corresponding branch-probability column, where genes such as
+`MPO`, `ELANE`, `LYZ`, `SPI1`, `S100A8`, and `S100A9` may be useful markers to
+inspect.
+
+## 6. Practical interpretation
+
+Use the `scLS.dynamic()` result as a ranking table:
+
+- Sort genes by `PeakFAP` or by a multiple-testing adjusted value such as
+  `p.adjust(PeakFAP, method = "BH")`.
+- Inspect the top-ranked gene trends along pseudotime.
+- Compare top genes with known markers, transcription factors, and pathway-level
+  annotations.
+- Treat the result as a first-pass screening step. The biological conclusion
+  should come from the combination of ranking, visualization, lineage context,
+  and external biological knowledge.
+
+For branching datasets such as hematopoiesis, avoid interpreting a single global
+run across all branches as branch-specific evidence. When the question is
+lineage-specific, first select a lineage or trajectory segment, then run
+`scLS.dynamic()` on that subset.
+
+## 7. Why this example is useful
+
+Human hematopoietic differentiation is a well-studied system. That makes it a
+good practical check for the end-user utility of `scLS.dynamic()` p-values:
+instead of asking whether the method produces a different numerical ranking from
+another tool, this workflow asks whether the ranking helps users recover and
+inspect biologically meaningful trajectory-associated genes in a familiar
+differentiation system.
