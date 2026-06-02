@@ -231,10 +231,22 @@ genes_to_plot <- intersect(
   c("GATA1", "KLF1", "AHSP", "HBB", "BLVRB", "ANK1", "TFR2"),
   rownames(erythroid_obj)
 )
-trend_plots <- lapply(genes_to_plot, plot_gene_trend, object = erythroid_obj)
+trend_plots <- lapply(
+  genes_to_plot,
+  function(gene) plot_gene_trend(erythroid_obj, gene)
+)
 
-wrap_plots(trend_plots)
+trend_plot <- wrap_plots(trend_plots, ncol = 3)
+
+ggsave(
+  filename = "erythroid_gene_trends.pdf",
+  plot = trend_plot,
+  width = 10,
+  height = 7
+)
 ```
+
+This saves the representative trend plots to `erythroid_gene_trends.pdf`.
 
 For this dataset, top-ranked genes should be interpreted by checking whether
 they recover known hematopoietic differentiation markers or transcriptional
