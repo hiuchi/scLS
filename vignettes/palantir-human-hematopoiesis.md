@@ -1,20 +1,15 @@
 # Interpreting scLS p-values in human hematopoiesis
 
-This page shows how to use `scLS.dynamic()` as a practical gene-ranking step in
-a well-characterized single-cell differentiation system. The example uses the
-human CD34+ bone marrow hematopoiesis dataset from Setty et al. / Palantir.
+This vignette demonstrates how to use `scLS.dynamic()` to rank
+pseudotime-associated genes in a well-characterized human hematopoietic
+differentiation dataset. We use the human CD34+ bone marrow scRNA-seq data
+analyzed by Setty et al. (2019), which includes Palantir pseudotime and branch
+probabilities.
 
-The goal is not to claim a new hematopoietic discovery. The goal is to show how
-an end user can use the `scLS.dynamic()` p-value to prioritize genes whose
-expression changes along pseudotime, then inspect whether top-ranked genes
-include known lineage markers or differentiation-associated programs.
-
-In this workflow, the `PeakFAP` column returned by `scLS.dynamic()` is treated as
-a gene-level p-value-like screening statistic. Smaller values indicate stronger
-Lomb-Scargle power along the supplied pseudotime axis. These values should be
-used to prioritize genes for follow-up visualization and biological annotation;
-they are not a replacement for marker validation, lineage-aware analysis, or
-replicate-aware modeling.
+Here, `PeakFAP` is used as a gene-level screening statistic: genes with smaller
+values are prioritized for trend visualization and comparison with known lineage
+markers. It should be interpreted as a ranking metric, not as a stand-alone
+biological conclusion.
 
 ## Dataset
 
