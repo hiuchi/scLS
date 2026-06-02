@@ -6,10 +6,9 @@ differentiation dataset. We use the human CD34+ bone marrow scRNA-seq data
 analyzed by Setty et al. (2019), which includes Palantir pseudotime and branch
 probabilities.
 
-Here, `PeakFAP` is used as a gene-level screening statistic: genes with smaller
-values are prioritized for trend visualization and comparison with known lineage
-markers. It should be interpreted as a ranking metric, not as a stand-alone
-biological conclusion.
+Genes are ranked by `PeakFAP`, the p-value returned by `scLS.dynamic()`. Genes
+with smaller values are prioritized for trend visualization and comparison with
+known lineage markers.
 
 ## Dataset
 
