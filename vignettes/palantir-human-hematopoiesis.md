@@ -37,17 +37,12 @@ install.packages(c("anndata", "curl", "dplyr", "ggplot2", "patchwork", "remotes"
 remotes::install_github("hiuchi/scLS")
 ```
 
-`scLS` uses Python's Astropy through `reticulate`. Create and bind a Python
-environment that contains Astropy before running `scLS.dynamic()`:
+`scLS` uses Python's Astropy through `reticulate`. Create a Python environment
+that contains Astropy before running `scLS.dynamic()`:
 
 ```bash
 conda create -n scLS-env python=3.12 astropy anndata -c conda-forge
 conda activate scLS-env
-```
-
-```r
-library(reticulate)
-use_condaenv("scLS-env", required = TRUE)
 ```
 
 ## 2. Load the Palantir AnnData object
@@ -57,6 +52,9 @@ a Seurat object. The Seurat object is created from the raw count matrix stored i
 the AnnData raw layer, and normalization is performed with Seurat.
 
 ```r
+library(reticulate)
+use_condaenv("scLS-env", required = TRUE)
+
 library(anndata)
 library(curl)
 library(Matrix)
