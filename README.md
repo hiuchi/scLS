@@ -116,7 +116,7 @@ result_cd14 <- scLS.dynamic(
   feature = "CD14",
   center = TRUE,
   window.func = "hanning",
-  f.min = 0,
+  f.min = 0.01,
   f.max = 2,
   n.bins = 500,
   fap.method = "baluev"
@@ -142,7 +142,7 @@ result_all <- scLS.dynamic(
   time.col = "slingPseudotime_1",
   center = TRUE,
   window.func = "hanning",
-  f.min = 0,
+  f.min = 0.01,
   f.max = 2,
   n.bins = 500,
   fap.method = "baluev",
@@ -157,6 +157,23 @@ result_all %>%
 Use this table to identify genes that show strong structure along one
 trajectory. In practice, you will usually sort by `PeakFAP` and then inspect the
 top genes in more detail.
+
+### 3.3 Practical guidance for frequency parameters
+
+For typical scRNA-seq pseudotime analyses, we recommend rescaling pseudotime to
+a common range, such as `[0, 1]`, before running scLS. The frequency range is
+then specified by `f.min` and `f.max`. For `f.min`, avoid an exact zero value
+because it mainly represents constant or near-constant components. A small
+positive value such as `f.min = 0.01` is a reasonable default; use
+`f.min = 0.1` when you want to suppress very low-frequency components.
+
+The `f.max` parameter controls the finest detectable pattern. For smooth trends
+or broad transient patterns, start with `f.max = 2` to `3`; for sharper peaks or
+multiple changes along pseudotime, explore `f.max = 5` to `10`. The `n.bins`
+parameter controls grid resolution. Use `n.bins = 300` to `500` for initial
+screening and `500` to `1000` for final checks. Larger `f.max` or `n.bins`
+values can increase noise sensitivity and computational cost, so inspect
+top-ranked gene trends and check ranking stability under reasonable settings.
 
 ## 4. Run `scLS.shift()` to compare two trajectories
 
