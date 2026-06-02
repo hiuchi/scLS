@@ -175,6 +175,23 @@ screening and `500` to `1000` for final checks. Larger `f.max` or `n.bins`
 values can increase noise sensitivity and computational cost, so inspect
 top-ranked gene trends and check ranking stability under reasonable settings.
 
+### 3.4 Multiple lineages or partially overlapping trajectories
+
+scLS uses the pseudotime values supplied by the user as a one-dimensional
+ordering and does not infer, align, or resolve lineage/branch structure by
+itself. If cells from multiple disconnected lineages or partially overlapping
+trajectories are analyzed together, the resulting p-values should be interpreted
+as evidence for expression variation along the supplied pseudotime, not as
+lineage-specific or branch-resolved effects.
+
+When lineage-specific interpretation is required, we recommend applying scLS
+separately to each lineage or trajectory segment. Branch-aware or
+regression-based methods may be more appropriate when the main biological
+question concerns branch-specific expression changes, disconnected trajectories,
+or partially overlapping lineages. In practice, users should inspect the
+expression trends of top-ranked genes together with lineage or branch labels
+before drawing biological conclusions.
+
 ## 4. Run `scLS.shift()` to compare two trajectories
 
 `scLS.shift()` expects two Seurat objects, one for each trajectory being
