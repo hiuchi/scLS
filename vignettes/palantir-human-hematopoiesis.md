@@ -41,7 +41,7 @@ remotes::install_github("hiuchi/scLS")
 environment that contains Astropy before running `scLS.dynamic()`:
 
 ```bash
-conda create -n scLS-env python=3.12 astropy -c conda-forge
+conda create -n scLS-env python=3.12 astropy anndata -c conda-forge
 conda activate scLS-env
 ```
 
@@ -53,12 +53,13 @@ use_condaenv("scLS-env", required = TRUE)
 ## 2. Load the Palantir AnnData object
 
 This code downloads Replicate 1 to an absolute temporary path and converts it to
-a Seurat object. The expression matrix stored in `.X` is the filtered,
-normalized, and log-transformed matrix distributed by Palantir.
+a Seurat object. The Seurat object is created from the raw count matrix stored in
+the AnnData raw layer, and normalization is performed with Seurat.
 
 ```r
 library(anndata)
 library(curl)
+library(Matrix)
 library(Seurat)
 library(dplyr)
 library(ggplot2)
@@ -71,8 +72,12 @@ rep1_file <- file.path(tempdir(), "human_cd34_bm_rep1.h5ad")
 curl_download(rep1_url, rep1_file)
 adata <- read_h5ad(rep1_file)
 
+raw_counts <- as(Matrix::t(adata$raw$X), "CsparseMatrix")
+rownames(raw_counts) <- rownames(adata$raw$var)
+colnames(raw_counts) <- rownames(adata$obs)
+
 human_cd34 <- CreateSeuratObject(
-  counts = t(adata$X),
+  counts = raw_counts,
   meta.data = adata$obs,
   project = "Setty_CD34_BM_Rep1"
 )
@@ -87,7 +92,8 @@ colnames(tsne) <- c("tSNE_1", "tSNE_2")
 
 human_cd34[["tsne"]] <- CreateDimReducObject(
   embeddings = tsne,
-  key = "tSNE_"
+  key = "tSNE_",
+  assay = "RNA"
 )
 
 branch_probs <- as.data.frame(adata$obsm[["palantir_branch_probs"]])
@@ -97,12 +103,15 @@ rownames(branch_probs) <- rownames(adata$obs)
 human_cd34 <- AddMetaData(human_cd34, metadata = branch_probs)
 ```
 
-Select variable genes for the transcriptome-wide `scLS.dynamic()` scan using the
-standard Seurat workflow. Because the processed Palantir object already stores
-normalized expression in `.X`, this example skips an additional `NormalizeData()`
-step.
+Normalize the raw counts and select variable genes for the transcriptome-wide
+`scLS.dynamic()` scan using the standard Seurat workflow.
 
 ```r
+human_cd34 <- NormalizeData(
+  human_cd34,
+  verbose = FALSE
+)
+
 human_cd34 <- FindVariableFeatures(
   human_cd34,
   selection.method = "vst",
@@ -151,7 +160,7 @@ marker_result <- scLS.dynamic(
   time.col = "pseudotime_scLS",
   feature = erythroid_markers,
   assay = "RNA",
-  slot = "counts",
+  slot = "data",
   center = TRUE,
   window.func = "hanning",
   f.min = 0.01,
@@ -172,7 +181,7 @@ all_result <- scLS.dynamic(
   object = erythroid_obj,
   time.col = "pseudotime_scLS",
   assay = "RNA",
-  slot = "counts",
+  slot = "data",
   center = TRUE,
   window.func = "hanning",
   f.min = 0.01,
@@ -192,9 +201,9 @@ ranked_result %>%
 ```
 
 In a local run using Replicate 1 with an erythroid branch-probability threshold
-of 0.5, the top-ranked genes included erythroid-associated genes such as `BLVRB`,
-`KLF1`, `GATA1`, `AHSP`, `ANK1`, `TFR2`, `HBB`, and `HBA1`. This is the intended
-use of the p-value ranking: it prioritizes genes for marker comparison and
+of 0.5, erythroid-associated genes such as `BLVRB`, `KLF1`, `GATA1`, `AHSP`,
+`ANK1`, `TFR2`, `HBB`, and `HBA1` were highly ranked. This is the intended use
+of the p-value ranking: it prioritizes genes for marker comparison and
 trajectory-level visualization.
 
 ## 5. Plot representative genes along pseudotime
@@ -204,7 +213,7 @@ clear, interpretable expression pattern along pseudotime.
 
 ```r
 plot_gene_trend <- function(object, gene) {
-  expr <- as.numeric(GetAssayData(object, assay = "RNA", slot = "counts")[gene, ])
+  expr <- as.numeric(GetAssayData(object, assay = "RNA", slot = "data")[gene, ])
 
   data.frame(
     pseudotime = object$pseudotime_scLS,
