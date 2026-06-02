@@ -51,6 +51,9 @@ This code downloads Replicate 1 to an absolute temporary path and converts it to
 a Seurat object. The Seurat object is created from the raw count matrix stored in
 the AnnData raw layer, and normalization is performed with Seurat.
 
+Run the following code in a fresh R session. `reticulate` must be attached to
+`scLS-env` before any package initializes Python.
+
 ```r
 library(reticulate)
 use_condaenv("scLS-env", required = TRUE)
