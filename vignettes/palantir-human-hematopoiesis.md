@@ -97,16 +97,18 @@ rownames(branch_probs) <- rownames(adata$obs)
 human_cd34 <- AddMetaData(human_cd34, metadata = branch_probs)
 ```
 
-Select variable genes for the transcriptome-wide `scLS.dynamic()` scan. Because
-the Palantir object already stores normalized expression in `.X`, the example
-uses the `counts` slot directly.
+Select variable genes for the transcriptome-wide `scLS.dynamic()` scan using the
+standard Seurat workflow. Because the processed Palantir object already stores
+normalized expression in `.X`, this example skips an additional `NormalizeData()`
+step.
 
 ```r
-expr_mat <- GetAssayData(human_cd34, assay = "RNA", slot = "counts")
-gene_means <- Matrix::rowMeans(expr_mat)
-gene_vars <- Matrix::rowMeans(expr_mat ^ 2) - gene_means ^ 2
-
-VariableFeatures(human_cd34) <- names(sort(gene_vars, decreasing = TRUE))[1:2000]
+human_cd34 <- FindVariableFeatures(
+  human_cd34,
+  selection.method = "vst",
+  nfeatures = 2000,
+  verbose = FALSE
+)
 ```
 
 ## 3. Select one lineage for a clear dynamic-expression example
