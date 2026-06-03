@@ -276,6 +276,11 @@ ggsave(
 
 This saves the representative trend plots to `erythroid_gene_trends.pdf`.
 
+Example output from the local run is shown below. The original PDF is also
+available at [erythroid_gene_trends.pdf](figures/erythroid_gene_trends.pdf).
+
+![Representative erythroid gene expression trends along Palantir pseudotime](figures/erythroid_gene_trends.png)
+
 For this dataset, top-ranked genes should be interpreted by checking whether
 they recover known hematopoietic differentiation markers or transcriptional
 programs. In an erythroid branch, useful genes to inspect include erythroid
