@@ -274,10 +274,7 @@ ggsave(
 )
 ```
 
-This saves the representative trend plots to `erythroid_gene_trends.pdf`.
-
-Example output from the local run is shown below. The original PDF is also
-available at [erythroid_gene_trends.pdf](figures/erythroid_gene_trends.pdf).
+Representative trend plots from the local run are shown below.
 
 ![Representative erythroid gene expression trends along Palantir pseudotime](figures/erythroid_gene_trends.png)
 
