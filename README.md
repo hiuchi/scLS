@@ -15,8 +15,8 @@ compare two trajectories.
 The workflow below uses an example PBMC dataset so you can run the full analysis
 end to end before switching to your own data.
 
-For a biologically annotated example using the Setty et al. / Palantir human
-CD34+ bone marrow hematopoiesis dataset, see
+For a biologically annotated example using the human CD34+ bone marrow
+hematopoiesis dataset analyzed by Setty et al. (2019) with Palantir, see
 [Interpreting scLS p-values in human hematopoiesis](vignettes/palantir-human-hematopoiesis.md).
 
 ## Functions
